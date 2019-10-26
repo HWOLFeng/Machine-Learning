@@ -74,7 +74,7 @@ def show_fashion_mnist(images, labels):
 
 
 # 最初的加载数据代码
-def load_data_fashion_mnist(batch_size, num_workers):
+def load_data_fashion_mnist(batch_size, num_workers=0):
     mnist_train = torchvision.datasets.FashionMNIST(
         root='~/Datasets', train=True, download=False, transform=transforms.ToTensor())
     mnist_test = torchvision.datasets.FashionMNIST(
@@ -84,3 +84,39 @@ def load_data_fashion_mnist(batch_size, num_workers):
     test_iter = Data.DataLoader(
         mnist_test, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     return train_iter, test_iter
+
+
+def evaluate_accuracy(data_iter, net):
+    acc_sum, n = 0.0, 0
+    for X, y in data_iter:
+        # 精确度计算
+        acc_sum += (net(X).argmax(dim=1) == y).float().sum().item()
+        n += y.shape[0]
+    return acc_sum / n
+
+
+# softmax 分类问题的训练函数
+def softmax_train(net, train_iter, test_iter, loss, num_epochs, batch_size, params=None, lr=None, optimizer=None):
+    for epoch in range(num_epochs):
+        train_loss_sum, train_acc_sum, n = 0.0, 0.0, 0
+        for X, y in train_iter:
+            y_hat = net(X)
+            l = loss(y_hat, y).sum()
+            # 梯度清零
+            if optimizer is not None:
+                optimizer.zero_grad()
+            elif params is not None and params[0].grad is not None:
+                for param in params:
+                    param.grad.data.zero_()
+
+            l.backward()
+            if optimizer is None:
+                sgd(params, lr, batch_size)
+            else:
+                optimizer.step()
+
+            train_loss_sum += l.item()
+            train_acc_sum += (y_hat.argmax(dim=1) == y).sum().item()
+            test_acc = evaluate_accuracy(test_iter, net)
+            print('epoch %d, loss %.4f, train acc %.3f, test acc %.3f'
+                  % (epoch + 1, train_loss_sum / n, train_acc_sum / n, test_acc))
