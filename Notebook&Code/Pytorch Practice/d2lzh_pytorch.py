@@ -4,6 +4,12 @@ from matplotlib import pyplot as plt
 import numpy as np
 import random
 
+import torchvision
+import torchvision.transforms as transforms
+import time
+import torch.utils.data as Data
+import sys
+
 
 # 作图
 def use_svg_display():
@@ -46,3 +52,35 @@ def sgd(params, lr, batch_size):
     for param in params:
         # 批量
         param.data -= lr / batch_size * param.grad
+
+
+# 将FASHION-MNIST数据集中对应的数值标签转换成文本
+def get_fashion_mnist_labels(labels):
+    text_labels = ['t-shirt', 'trouser', 'pullover', 'dress',
+                   'coat', 'sandal', 'shirt', 'sneaker', 'bag', 'ankleboot']
+    return [text_labels[int(i)] for i in labels]
+
+
+# 一行里画出多张图像和对应标签的函数
+def show_fashion_mnist(images, labels):
+    use_svg_display()
+    _, figs = plt.subplots(1, len(images), figsize=(12, 12))
+    for f, img, lbl in zip(figs, images, labels):
+        f.imshow(img.view(28, 28).numpy())
+        f.set_title(lbl)
+        f.axes.get_xaxis().set_visible(False)
+        f.axes.get_yaxis().set_visible(False)
+    plt.show()
+
+
+# 最初的加载数据代码
+def load_data_fashion_mnist(batch_size, num_workers):
+    mnist_train = torchvision.datasets.FashionMNIST(
+        root='~/Datasets', train=True, download=False, transform=transforms.ToTensor())
+    mnist_test = torchvision.datasets.FashionMNIST(
+        root='~/Datasets', train=False, download=False, transform=transforms.ToTensor())
+    train_iter = Data.DataLoader(
+        mnist_train, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    test_iter = Data.DataLoader(
+        mnist_test, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    return train_iter, test_iter
