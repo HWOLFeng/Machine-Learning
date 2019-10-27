@@ -9,6 +9,7 @@ import torchvision.transforms as transforms
 import time
 import torch.utils.data as Data
 import sys
+import torch.nn as nn
 
 
 # 作图
@@ -117,6 +118,17 @@ def softmax_train(net, train_iter, test_iter, loss, num_epochs, batch_size, para
 
             train_loss_sum += l.item()
             train_acc_sum += (y_hat.argmax(dim=1) == y).sum().item()
-            test_acc = evaluate_accuracy(test_iter, net)
-            print('epoch %d, loss %.4f, train acc %.3f, test acc %.3f'
-                  % (epoch + 1, train_loss_sum / n, train_acc_sum / n, test_acc))
+            n += y.shape[0]
+        test_acc = evaluate_accuracy(test_iter, net)
+        print('epoch %d, loss %.4f, train acc %.3f, test acc %.3f' %
+              (epoch + 1, train_loss_sum / n, train_acc_sum / n, test_acc))
+
+
+# 输入形状转换
+class FlattenLayer(nn.Module):
+    def __init__(self):
+        super(FlattenLayer, self).__init__()
+
+    def forward(self, x):
+        # x shape: (batch, *, *, ...)
+        return x.view(x.shape[0], -1)
