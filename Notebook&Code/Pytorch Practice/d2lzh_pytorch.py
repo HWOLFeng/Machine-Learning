@@ -172,3 +172,23 @@ def fit_and_plot(train_features, test_features, train_labels, test_labels, num_e
     semilogy(range(1, num_epochs + 1), train_ls, 'epochs', 'loss',
              range(1, num_epochs + 1), test_ls, ['train', 'test'])
     print('weight:', net.weight.data, '\nbias:', net.bias.data)
+
+
+def evaluate_accuary(data_iter, net):
+    acc_sum, n = 0.0, 0
+    for X, y in data_iter:
+        if isinstance(net, torch.nn.Module):
+            # 评估模式，会关闭drop
+            net.eval()
+            acc_sum += (net(X).argmax(dim=1) == y).float().sum().item()
+            # 改回训练模式
+            net.train()
+        else:
+            # 如果有这个参数
+            if('is_training' in net.__code__.co_varnames):
+                acc_sum += (net(X, is_training=False).argmax(dim=1)
+                            == y).float().sum().item()
+            else:
+                acc_sum += (net(X).argmax(dim=1) == y).float().sum().item()
+        n += y.shape[0]
+    return acc_num / n
