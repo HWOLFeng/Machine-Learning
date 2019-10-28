@@ -1,15 +1,18 @@
 import torch
-from IPython import display
-from matplotlib import pyplot as plt
+import torch.nn as nn
+import torch.optim as optim
+import torch.utils.data as Data
+
 import numpy as np
-import random
 
 import torchvision
 import torchvision.transforms as transforms
-import time
-import torch.utils.data as Data
+from IPython import display
+from matplotlib import pyplot as plt
+
 import sys
-import torch.nn as nn
+import time
+import random
 
 
 # 作图
@@ -132,3 +135,40 @@ class FlattenLayer(nn.Module):
     def forward(self, x):
         # x shape: (batch, *, *, ...)
         return x.view(x.shape[0], -1)
+
+
+# 多项式实验作图函数
+def semilogy(x_vals, y_vals, x_label, y_label, x2_vals=None, y2_vals=None, legend=None, figsize=(3.5, 2.5)):
+    set_figsize(figsize)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.semilogy(x_vals, y_vals)
+    if x2_vals and y2_vals:
+        plt.semilogy(x2_vals, y2_vals, linestyle=':')
+        plt.legend(legend)
+
+
+# 多项式实验作图
+def fit_and_plot(train_features, test_features, train_labels, test_labels, num_epochs=100, loss=nn.MSELoss()):
+    net = nn.Linear(train_features.shape[-1], 1)
+    batch_size = min(10, train_labels.shape[0])
+    dataset = Data.TensorDataset(train_features, train_labels)
+    train_iter = Data.DataLoader(dataset, batch_size, shuffle=True)
+
+    optimizer = optim.SGD(net.parameters(), lr=0.01)
+    train_ls, test_ls = [], []
+    for _ in range(num_epochs):
+        for X, y in train_iter:
+            l = loss(net(X), y.view(-1, 1))
+
+            optimizer.zero_grad()
+            l.backward()
+            optimizer.step()
+        train_labels = train_labels.view(-1, 1)
+        test_labels = test_labels.view(-1, 1)
+        train_ls.append(loss(net(train_features), train_labels).item())
+        test_ls.append(loss(net(test_features), test_labels).item())
+    print('final epoch: train loss', train_ls[-1], 'test loss', test_ls[-1])
+    semilogy(range(1, num_epochs + 1), train_ls, 'epochs', 'loss',
+             range(1, num_epochs + 1), test_ls, ['train', 'test'])
+    print('weight:', net.weight.data, '\nbias:', net.bias.data)
