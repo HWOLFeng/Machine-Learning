@@ -5,3 +5,6 @@ Pytorch代码练习：https://github.com/ShusenTang/Dive-into-DL-PyTorch
 
 # Kaggle 
 - House Prices: https://www.kaggle.com/c/house-prices-advanced-regression-techniques/overview
+
+# 待完成
+- 4.6 GPU
