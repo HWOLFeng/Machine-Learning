@@ -26,6 +26,8 @@ docs = [
     'BGP4MP|1569974454|A|12.0.1.63|7018|84.205.69.0/24|7018 6453 47692 12654|IGP|12.0.1.63|0|0|7018:5000 7018:37232|NAG|64887 10.1.81.128|',
     'BGP4MP|1569974454|A|12.0.1.63|7018|93.175.149.0/24|7018 3257 12779 12654|IGP|12.0.1.63|0|0|7018:5000 7018:37232|NAG|64887 10.1.81.128|'
 ]
+docs = [doc.replace('.', 'd').replace('/', 'x').replace(':', 'm')
+        for doc in docs]
 # define class labels
 # labels = array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0])
 labels = array([1, 1, 1, 1, 0, 0, 0, 0])
@@ -34,7 +36,7 @@ vocab_size = 50
 encoded_docs = [one_hot(d, vocab_size) for d in docs]
 print(encoded_docs)
 # pad documents to a max length of 4 words
-max_length = 4
+max_length = 10
 padded_docs = pad_sequences(encoded_docs, maxlen=max_length, padding='post')
 print(padded_docs)
 # define the model
