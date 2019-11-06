@@ -83,6 +83,7 @@ def load_data_fashion_mnist(batch_size, num_workers=0):
         root='~/Datasets', train=True, download=False, transform=transforms.ToTensor())
     mnist_test = torchvision.datasets.FashionMNIST(
         root='~/Datasets', train=False, download=False, transform=transforms.ToTensor())
+    # shuffle打乱数据
     train_iter = Data.DataLoader(
         mnist_train, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     test_iter = Data.DataLoader(
@@ -174,21 +175,36 @@ def fit_and_plot(train_features, test_features, train_labels, test_labels, num_e
     print('weight:', net.weight.data, '\nbias:', net.bias.data)
 
 
-def evaluate_accuary(data_iter, net):
+def evaluate_accuary(data_iter, net, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
     acc_sum, n = 0.0, 0
-    for X, y in data_iter:
-        if isinstance(net, torch.nn.Module):
-            # 评估模式，会关闭drop
-            net.eval()
-            acc_sum += (net(X).argmax(dim=1) == y).float().sum().item()
-            # 改回训练模式
-            net.train()
-        else:
-            # 如果有这个参数
-            if('is_training' in net.__code__.co_varnames):
-                acc_sum += (net(X, is_training=False).argmax(dim=1)
-                            == y).float().sum().item()
-            else:
+    with torch.no_grad():
+        for X, y in data_iter:
+            if isinstance(net, torch.nn.Module):
+                # 评估模式，会关闭dropout
+                net.eval()
                 acc_sum += (net(X).argmax(dim=1) == y).float().sum().item()
-        n += y.shape[0]
+                # 改回训练模式
+                net.train()
+            else:
+                # 如果有这个参数
+                if('is_training' in net.__code__.co_varnames):
+                    acc_sum += (net(X, is_training=False).argmax(dim=1)
+                                == y).float().sum().item()
+                else:
+                    acc_sum += (net(X).argmax(dim=1) == y).float().sum().item()
+            n += y.shape[0]
     return acc_num / n
+
+
+def corr2d(X, K):
+    # X输入，K卷积核，Y输出
+    h, w = K.shape
+    Y = torch.zeros((X.shape[0] - h + 1, X.shape[1] - w + 1))
+    for i in range(Y.shape[0]):
+        for j in range(Y.shape[1]):
+            Y[i, j] = (X[i: i + h, j: j + w] * K).sum()
+    return Y
+
+
+def train_cuda_cpu(data_iter, net, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))):
+    pass
