@@ -175,7 +175,7 @@ def fit_and_plot(train_features, test_features, train_labels, test_labels, num_e
     print('weight:', net.weight.data, '\nbias:', net.bias.data)
 
 
-def evaluate_accuary(data_iter, net, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
+def evaluate_accuracy(data_iter, net, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
     acc_sum, n = 0.0, 0
     with torch.no_grad():
         for X, y in data_iter:
@@ -193,7 +193,7 @@ def evaluate_accuary(data_iter, net, device=torch.device('cuda' if torch.cuda.is
                 else:
                     acc_sum += (net(X).argmax(dim=1) == y).float().sum().item()
             n += y.shape[0]
-    return acc_num / n
+    return acc_sum / n
 
 
 def corr2d(X, K):
@@ -206,5 +206,48 @@ def corr2d(X, K):
     return Y
 
 
-def train_cuda_cpu(data_iter, net, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))):
-    pass
+def train_cuda_cpu(net, train_iter, test_iter, batch_size, optimizer, device, num_epochs):
+    net = net.to(device)
+    print("training on ", device)
+    loss = torch.nn.CrossEntropyLoss()
+    batch_count = 0
+    for epoch in range(num_epochs):
+        train_l_sum, train_acc_sum, n, start = 0.0, 0.0, 0, time.time()
+        for X, y in train_iter:
+            X = X.to(device)
+            y = y.to(device)
+            y_hat = net(X)
+            l = loss(y_hat, y)
+            optimizer.zero_grad()
+            l.backward()
+            optimizer.step()
+            train_l_sum += l.cpu().item()
+            train_acc_sum += (y_hat.argmax(dim=1) == y).sum().cpu().item()
+            n += y.shape[0]
+            batch_count += 1
+            test_acc = evaluate_accuracy(test_iter, net)
+            print('epoch % d, loss % .4f, train acc % .3f, test acc % .3f, time % .1f sec' % (
+                epoch + 1, train_l_sum / batch_count, train_acc_sum / n, test_acc, time.time() - start))
+
+
+def load_data_fashion_mnist2(batch_size, resize=None, root='~/Datasets/FashionMNIST'):
+    # 用于AlexNet的手写数字辨识
+    trans = []
+    if resize:
+        trans.append(torchvision.transforms.Resize(size=resize))
+    trans.append(torchvision.transforms.ToTensor())
+
+    transform = torchvision.transforms.Compose(trans)
+    mnist_train = torchvision.datasets.FashionMNIST(
+        root=root, train=True, download=False, transform=transform)
+    mnist_test = torchvision.datasets.FashionMNIST(
+        root=root, train=False, download=False, transform=transform)
+    train_iter = torch.utils.data.DataLoader(
+        mnist_train, batch_size=batch_size, shuffle=True
+        #  num_workers=1
+         )
+    test_iter = torch.utils.data.DataLoader(
+        mnist_test, batch_size=batch_size, shuffle=False 
+        # num_workers=1
+        )
+    return train_iter, test_iter
