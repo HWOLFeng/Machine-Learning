@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as Data
+import torch.nn.functional as F
 
 import numpy as np
 
@@ -230,7 +231,7 @@ def train_cuda_cpu(net, train_iter, test_iter, batch_size, optimizer, device, nu
                 epoch + 1, train_l_sum / batch_count, train_acc_sum / n, test_acc, time.time() - start))
 
 
-def load_data_fashion_mnist2(batch_size, resize=None, root='~/Datasets/FashionMNIST'):
+def load_data_fashion_mnist2(batch_size, resize=None, root='~/Datasets'):
     # 用于AlexNet的手写数字辨识
     trans = []
     if resize:
@@ -245,9 +246,17 @@ def load_data_fashion_mnist2(batch_size, resize=None, root='~/Datasets/FashionMN
     train_iter = torch.utils.data.DataLoader(
         mnist_train, batch_size=batch_size, shuffle=True
         #  num_workers=1
-         )
+    )
     test_iter = torch.utils.data.DataLoader(
-        mnist_test, batch_size=batch_size, shuffle=False 
+        mnist_test, batch_size=batch_size, shuffle=False
         # num_workers=1
-        )
+    )
     return train_iter, test_iter
+
+
+class GlobalAvgPool2d(nn.Module):
+    def __init__(self):
+        super(GlobalAvgPool2d, self).__init__()
+
+    def forward(self, x):
+        return F.avg_pool2d(x, kernel_size=x.size()[2:])
